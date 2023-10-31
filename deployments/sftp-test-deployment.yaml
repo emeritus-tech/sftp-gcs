@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sftp-test-deployment
+spec:
+  selector:
+    matchLabels:
+      app: sftp-test
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sftp-test
+    spec:
+      containers:
+      - name: sftp-test
+        image: gcr.io/emeritus-data-science/sftp-gcs:latest
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "500m"
+        env:
+          - name: bucket
+            value: "<BUCKET_NAME>"
+          - name: port_var
+            value: "9022"
+          - name: username
+            valueFrom:
+              secretKeyRef:
+                name: sftp-test-credentials
+                key: user
+          - name: password
+            valueFrom:
+              secretKeyRef:
+                name: sftp-test-credentials
+                key: password
+
+          - name: sa_key_file_path
+            value: /secrets/gcloud-auth/google-cloud-key.json
+
+        volumeMounts:
+        - mountPath: /secrets/gcloud-auth
+          name: gcloud-auth
+          readOnly: true
+        ports:
+        - containerPort: 9022
+      volumes:
+      - name: gcloud-auth
+        secret:
+          secretName: gcloud
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sftp-test-service
+spec:
+  type: LoadBalancer
+  # loadBalancerIP:
+  ports:
+  - port: 9022
+    targetPort: 9022
+    protocol: TCP
+  selector:
+    app: sftp-test
