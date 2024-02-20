@@ -954,9 +954,11 @@ new ssh2.Server({
 
     client.on('end', function () {
         logger.debug('Client disconnected');
+        client.removeAllListeners();
     });
     client.on('error', (err) => {
         logger.debug(`ERROR(client.on): ${util.inspect(err)}`);
+        client.removeAllListeners();
     });
 }).listen(SERVER_PORT, '0.0.0.0', function () {
     logger.info("****************************************");
